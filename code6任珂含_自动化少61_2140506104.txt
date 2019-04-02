@@ -1,0 +1,274 @@
+%%%%%% T1
+clear all;clc;
+i1 = imread('lena.bmp');%原图
+wsize=5;
+m = 0;%均值
+var = 0.01;%方差
+i1fff = imnoise(i1, 'gaussian', m, var);%高斯噪声
+figure;imshow(i1fff); title("高斯噪声");saveas(gcf,'lenagau.png');
+
+%1算术均值average
+w1 = fspecial('average',3);
+imgout1 = imfilter(i1fff,w1,'replicate');
+%2几何均值
+imgout2 =geom(i1fff, wsize);
+%3谐波均值
+imgout3=harm(i1fff, wsize);
+%4逆谐波均值
+imgout4 = conm(i1fff, wsize,1.5);
+%5中值medfilt2
+imgout5 = medfilt2(i1fff,[5,5]);
+%6最大值
+imgout6=maxm(i1fff, wsize);
+%7最小值
+imgout7=minm(i1fff, wsize);
+%8中点
+imgout8=midm(i1fff, wsize);
+figure;
+subplot(1,3,1);imshow(i1fff);title('高斯噪声方差0.1');
+subplot(1,3,2);imshow(imgout1);title('算术均值');
+subplot(1,3,3);imshow(imgout2);title('几何均值');
+saveas(gcf,'ifgau1.png');
+figure;
+subplot(1,3,1);imshow(imgout3);title('谐波均值');
+subplot(1,3,2);imshow(imgout4);title('逆谐波均值Q=1.5');
+subplot(1,3,3);imshow(imgout5);title('中值滤波');
+saveas(gcf,'ifgau2.png');
+figure;
+subplot(1,3,1);imshow(imgout6);title('最大值滤波');
+subplot(1,3,2);imshow(imgout7);title('最小值滤波');
+subplot(1,3,3);imshow(imgout8);title('中点滤波');
+saveas(gcf,'ifgau3.png');
+
+
+%%%函数
+function iout = harm(image, m)
+image=double(image);
+[ic,ik] = size(image);
+m1 = (m-1)/2;
+ipad=padarray(image, [m1, m1], 'replicate');
+iout=ipad;
+for i=1+m1:m1+ic
+    for j=1+m1:m1+ik
+%         a=ipad(i-m1:i+m1, j-m1:j+m1);
+        a=1./(ipad(i-m1:i+m1, j-m1:j+m1));
+        iout(i, j) = (m*m)/(sum(sum(a)));
+    end
+end
+iout = uint8(iout(m1+1:ic+m1, m1+1:ik+m1));%0到255
+end%谐波均值滤波
+function iout = geom(image, m)
+image = double(image);
+[ic, ik] = size(image);
+m1 = (m-1)/2;
+
+ipad = padarray(image, [m1, m1], 'replicate');
+iout = ipad;
+for i=1+m1:m1+ic
+    for j=1+m1:m1+ik
+        temp = ipad(i-m1:i+m1, j-m1:j+m1);
+        iout(i, j) =  (prod(temp(:)))^(1/m/m);
+    end
+end
+
+iout = uint8(iout(m1+1:ic+m1, m1+1:ik+m1));
+end%几何均值滤波
+function iout = conm(image, m, Q)
+image = double(image);
+[ic, ik] = size(image);
+m1 = (m-1)/2;
+
+ipad = padarray(image, [m1, m1], 'replicate');
+iout = ipad;
+for i=1+m1:m1+ic
+    for j=1+m1:m1+ik
+        a = ipad(i-m1:i+m1, j-m1:j+m1);
+        b1 = a.^(Q+1);
+        b2 = a.^(Q);      
+        iout(i, j) = sum(sum(b1))/sum(sum(b2)); 
+    end
+end
+iout = uint8(iout(m1+1:ic+m1, m1+1:ik+m1));
+end%逆谐波均值滤波
+function iout = maxm(image, m)
+image = double(image);
+[ic, ik] = size(image);
+m1 = (m-1)/2;
+
+ipad = padarray(image, [m1, m1], 'replicate');
+iout = ipad;
+for i=1+m1:m1+ic
+    for j=1+m1:m1+ik
+        a = ipad(i-m1:i+m1, j-m1:j+m1);
+        iout(i, j) =  max(a(:));
+    end
+end
+
+iout = uint8(iout(m1+1:ic+m1, m1+1:ik+m1));
+end%最大值滤波
+function iout = minm(image, m)
+image = double(image);
+[ic, ik] = size(image);
+m1 = (m-1)/2;
+
+ipad = padarray(image, [m1, m1], 'replicate');
+iout = ipad;
+for i=1+m1:m1+ic
+    for j=1+m1:m1+ik
+        a = ipad(i-m1:i+m1, j-m1:j+m1);
+        iout(i, j) =  min(a(:));
+    end
+end
+
+iout=uint8(iout(m1+1:ic+m1, m1+1:ik+m1));
+end%最大值滤波
+function iout = midm(image, m)
+image=double(image);
+[ic, ik]=size(image);
+m1=(m-1)/2;
+ipad=padarray(image, [m1, m1], 'replicate');
+iout=ipad;
+for i=1+m1:m1+ic
+    for j=1+m1:m1+ik
+        a=ipad(i-m1:i+m1, j-m1:j+m1);
+        iout(i, j)=0.5*( max(a(:))+min(a(:)));
+    end
+end
+iout=uint8(iout(m1+1:ic+m1, m1+1:ik+m1));
+end%中点滤波
+
+%%%%%%T2
+clear all;clc;
+i1 = imread('lena.bmp');%原图
+wsize=5;
+% figure;imshow(i1fff); title("高斯噪声");saveas(gcf,'lenagau.png');
+%i1fff=imnoise(i1,'salt & pepper',0.1);%椒盐噪声
+%figure;imshow(i1fff); title("imnoise椒盐");saveas(gcf,'lenaps.png');
+i1fff1=jiao(i1,0.1);%椒噪声
+i1fff2=yan(i1,0.1);%盐噪声
+figure; 
+subplot(1,2,1);imshow(i1fff1);title('胡椒噪声 密度0.1');
+subplot(1,2,2);imshow(i1fff2);title('盐粒噪声 密度0.1');
+saveas(gcf,'jiaoyan.png');
+%4逆谐波均值
+ipepz = conm(i1fff1, wsize,1.5);
+ipepf = conm(i1fff1, wsize,-1.5);
+isaltz = conm(i1fff2, wsize,1.5);
+isaltf = conm(i1fff2, wsize,-1.5);
+figure;
+subplot(1,3,1);imshow(ipepz);title('Q=1.5');
+subplot(1,3,2);imshow(i1fff1);title('椒噪声');
+subplot(1,3,3);imshow(ipepf);title('Q=-1.5');
+saveas(gcf,'jiaozf.png');
+figure;
+subplot(1,3,1);imshow(isaltz);title('Q=1.5');
+subplot(1,3,2);imshow(i1fff2);title('盐噪声');
+subplot(1,3,3);imshow(isaltf);title('Q=-1.5');
+saveas(gcf,'yanzf.png');
+
+function iout = conm(image, m, Q)
+image = double(image);
+[ic, ik] = size(image);
+m1 = (m-1)/2;
+
+ipad = padarray(image, [m1, m1], 'replicate');
+iout = ipad;
+for i=1+m1:m1+ic
+    for j=1+m1:m1+ik
+        a = ipad(i-m1:i+m1, j-m1:j+m1);
+        b1 = a.^(Q+1);
+        b2 = a.^(Q);      
+        iout(i, j) = sum(sum(b1))/sum(sum(b2)); 
+    end
+end
+iout = uint8(iout(m1+1:ic+m1, m1+1:ik+m1));
+end%逆谐波均值滤波
+
+
+function i = jiao(image, p)%胡椒噪声
+i=image;
+a=rand(size(image));
+i(a<p) = 0;
+end
+function i = yan(image, p)%盐噪声
+i=image;
+a=rand(size(image));
+i(a<p) = 255;
+end
+
+
+%%%T3
+clear all;clc;
+[i1,map] = imread('lena.bmp');%原图
+i1 = ind2gray(i1,map);
+% m = 0;var = 0.01;%均值方差
+% i1fff = imnoise(i1, 'gaussian', m, var);%高斯噪声
+% figure;imshow(i1fff); title("高斯噪声");saveas(gcf,'lenagau.png');
+%i1fff=imnoise(i1,'salt & pepper',0.1);%椒盐噪声
+%figure;imshow(i1fff); title("imnoise椒盐");saveas(gcf,'lenaps.png');
+
+ib= blur(i1,1, 0.02, 0.02);%45度方向a=b
+
+var=(10/255)^2;
+ibgau = imnoise(ib, 'gaussian', 0,var);%高斯噪声
+figure;
+subplot(1,2,1);imshow(ib);title("运动模糊");
+subplot(1,2,2);imshow(ibgau); title("10pixels高斯噪声");
+saveas(gcf,'movbg.png');
+H=blurH(i1,1, 0.02, 0.02);
+k=0.02;
+g=0.5;
+ibgw=wiener(ibgau,H,k);
+ibgc=CLSF(ibgau,H,g);
+figure;
+subplot(1,2,1);imshow(ibgw);title('维纳恢复K=0.02');
+subplot(1,2,2);imshow(ibgc);title('约束最小二乘恢复γ=0.5');
+saveas(gcf,'movwc.png');
+function img = blur(image,t,a,b)
+image = im2double(image); 
+[ic, ik] = size(image);
+u= -ic:(ic-1);
+v = -ik:(ik-1);
+[U,V] = meshgrid(u,v);%生成位置矩阵
+c = (U*a+V*b)*pi;
+H = t./c.*sin(c).*exp(-1i*c);
+H(isnan(H)) = 1;
+F = fftshift(fft2(image,size(H,1),size(H,2)));%原图
+img = real(ifft2(ifftshift(F.*H))); 
+img = uint8(img*255);
+img=img(1:ic,1:ik);
+end%运动模糊
+function H = blurH(image,t,a,b)
+image = im2double(image); 
+[ic, ik] = size(image);
+u= -ic:(ic-1);
+v = -ik:(ik-1);
+[U,V] = meshgrid(u,v);%生成位置矩阵
+c = (U*a+V*b)*pi;
+H = t./c.*sin(c).*exp(-1i*c);
+
+H(isnan(H)) = 1;
+end%运动模糊函数
+
+%维纳滤波
+function image = wiener(img, H, k)
+img = im2double(img); 
+[ic, ik] = size(img);
+F = fftshift(fft2(img,size(H,1),size(H,2))); 
+H1 = (1./H).*(abs(H).^2)./(abs(H).^2 + k);
+g = ifft2(ifftshift(F.*H1));
+image = real(g(1:ic, 1:ik)); %image_out
+image = uint8(image*255);
+end
+%约束最小二乘方滤波
+function image =CLSF(image, H, g)
+image = im2double(image); 
+[ic, ik] = size(image);
+F = fftshift(fft2(image,size(H,1),size(H,2))); 
+p=[0,-1,0;-1,4,-1;0,-1,0];
+P=fftshift(psf2otf(p,[size(H,1),size(H,2)]));
+H1 = (conj(H))./((abs(H).^2)+g*(abs(P).^2 ));
+g = ifft2(ifftshift(F.*H1));
+image = real(g(1:ic, 1:ik)); %image_out
+image = uint8(image*255);
+end
